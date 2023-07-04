@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".LoginActivity"
+    tools:context=".SignUpActivity"
     android:padding="10dp"
     >
 
@@ -12,7 +12,7 @@
         android:id="@+id/techsaLogo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Techsa Checkin"
+        android:text="Sign Up"
         android:textStyle="bold"
         android:textColor="@color/purple_soothing"
         style="@style/ThemeOverlay.Material3.AutoCompleteTextView.OutlinedBox"
@@ -27,9 +27,9 @@
         android:id="@+id/logoImage"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:src="@drawable/order_ride_amico"
-       android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"
+        android:src="@drawable/mobile_login_amico"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
         />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -86,54 +86,25 @@
         android:layout_marginEnd="10dp"
         >
         <com.google.android.material.textfield.TextInputEditText
-           android:id="@+id/passwordEditText"
+            android:id="@+id/passwordEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword"
             />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Button
-        android:id="@+id/loginButton"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_below="@id/passwordTextField"
-        android:layout_centerHorizontal="true"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="5dp"
-        android:backgroundTint="@color/purple_soothing"
-        android:text="Login" />
+
     <Button
         android:id="@+id/signUpButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/loginButton"
-        android:layout_marginTop="20dp"
-        android:text="Create Account, Sign Up"
+        android:layout_below="@id/passwordTextField"
+        android:layout_marginTop="40dp"
+        android:text="Create Account"
         android:textSize="14sp"
         android:textColor="@color/black"
         android:layout_centerHorizontal="true"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        />
-
-
-    <Button
-        android:id="@+id/outlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Google Sign Up"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
-        android:textColor="@color/black"
-        app:icon="@drawable/google"
-        app:iconTint="@color/purple_soothing"
-        android:layout_below="@id/signUpButton"
-        android:layout_marginTop="5dp"
-        android:layout_centerHorizontal="true"
         />
 
 </RelativeLayout>
-
-
-
