@@ -47,7 +47,7 @@ class LoginActivity : AppCompatActivity() {
         // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            val i = Intent(this, MapActivity::class.java)
+            val i = Intent(this, MainActivity::class.java)
             startActivity(i)
             finish()
         }
@@ -83,7 +83,7 @@ class LoginActivity : AppCompatActivity() {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithEmail:success")
                     val user = auth.currentUser
-                    val i = Intent(this@LoginActivity, MapActivity::class.java)
+                    val i = Intent(this@LoginActivity, MainActivity::class.java)
                     finish()
                     startActivity(i)
                 } else {

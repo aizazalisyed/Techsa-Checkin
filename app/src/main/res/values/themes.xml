@@ -14,6 +14,8 @@
         <!-- Customize your theme here. -->
     </style>
 
-
-
+    <style name="BottomNavigationViewStyle" parent="Widget.Design.BottomNavigationView">
+        <item name="itemIconTint">@drawable/bottom_navigation_item_color</item>
+        <item name="itemTextColor">@drawable/bottom_navigation_item_color</item>
+    </style>
 </resources>
