@@ -48,12 +48,10 @@ class MainActivity : AppCompatActivity() {
                 R.id.map_page ->{
                     fm.beginTransaction().hide(active).show(mapFragment).commit();
                     active = mapFragment
-                    Toast.makeText(this, "listen", Toast.LENGTH_SHORT).show()
                 }
                 R.id.profile ->{
                     fm.beginTransaction().hide(active).show(profileFragment).commit();
                     active = profileFragment
-                    Toast.makeText(this, "listen", Toast.LENGTH_SHORT).show()
                 }
                 R.id.checkinList ->{
                     fm.beginTransaction().hide(active).show(checkInFragment).commit();

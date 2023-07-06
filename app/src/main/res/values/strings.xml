@@ -2,4 +2,6 @@
     <string name="app_name">Techsa Checkin</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    
+    <string name="MAPS_API_KEY">AIzaSyBt7YPXw6TEbdFLxN-GkYOy2QQ6lNqUkdA</string>
 </resources>
