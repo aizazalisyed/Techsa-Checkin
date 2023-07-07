@@ -3,10 +3,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.text.InputType
+import retrofit2.Call
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -15,6 +18,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.FragmentTransaction
 import com.google.android.gms.common.api.Status
@@ -30,12 +36,17 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import retrofit2.Response
 import java.com.techsacheckin.R
+import java.com.techsacheckin.RetrofitClient
+import java.com.techsacheckin.WeatherResponse
+import java.io.IOException
+import java.util.*
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
     private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1122
-    private val DEFAULT_ZOOM = 15
+    private val DEFAULT_ZOOM = 10
     private val defaultLocation = LatLng(0.0, 0.0)
     private var locationPermissionGranted = false
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -44,6 +55,13 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private val MIN_TIME_BETWEEN_UPDATES: Long = 1000 // 1 second
     private val MIN_DISTANCE_CHANGE_FOR_UPDATES: Float = 10f // 10 meters
     private lateinit var locationManager: LocationManager
+
+    //Place info
+    private var temp_c: Double = 0.0
+    private var temp_f : Double = 0.0
+    private  var condition: String = "null"
+    val API_KEY = "87af37dd59a246489ac42408222612"
+
 
     private val locationListener: LocationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
@@ -58,6 +76,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     ), DEFAULT_ZOOM.toFloat()
                 )
             )
+            map?.addMarker(
+                MarkerOptions()
+                    .position(LatLng(location.latitude,location.longitude))
+                    .title(getPlaceNameFromLocation(location)))
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
@@ -132,7 +154,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                             .position(location)
                             .title(place.name))
 
+
                 }
+                // Show the check-in dialog with the updated place name
+                place.name?.let { showCheckInDialog(it) }
 
             }
 
@@ -148,6 +173,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         map = googleMap
         getLocationPermission()
         updateLocationUI()
+
+        // Set a marker click listener
+        map?.setOnMarkerClickListener { marker ->
+            showCheckInDialog(getPlaceNameFromLocation(lastKnownLocation!!))
+            true
+        }
     }
 
     private fun getLocationPermission() {
@@ -211,7 +242,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     if (task.isSuccessful) {
                         lastKnownLocation = task.result
                         if (lastKnownLocation != null) {
-                            Log.d(TAG, "Moving camera to user's current location")
+
+                            val placeName = getPlaceNameFromLocation(lastKnownLocation!!)
+
                             map?.moveCamera(
                                 CameraUpdateFactory.newLatLngZoom(
                                     LatLng(
@@ -220,6 +253,11 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                                     ), DEFAULT_ZOOM.toFloat()
                                 )
                             )
+                            map?.addMarker(
+                                MarkerOptions()
+                                    .position(LatLng(lastKnownLocation!!.latitude,lastKnownLocation!!.longitude))
+                                    .title(getPlaceNameFromLocation(lastKnownLocation!!)))
+
                         }
                     } else {
                         Log.d(TAG, "Current location is null. Using defaults.")
@@ -275,4 +313,96 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     companion object {
         private const val TAG = "MapFragment"
     }
-}
+
+    fun getWeatherInfo(placeName : String){
+
+        RetrofitClient().getUserService()
+            ?.getCurrentWeatherAsync(apiKey = API_KEY, location = placeName, aqi= "no")?.enqueue(
+                object : retrofit2.Callback<WeatherResponse> {
+                    override fun onResponse(
+                        call: Call<WeatherResponse>,
+                        response: Response<WeatherResponse>
+                    ) {
+                        if(response.isSuccessful){
+                            temp_c = response.body()!!.current.temp_c
+                            temp_f = response.body()!!.current.temp_f
+                            condition = response.body()!!.current.condition.text
+
+                            Toast.makeText(requireContext(), "temp = $temp_f F, $temp_c C : condition = $condition", Toast.LENGTH_SHORT).show()
+                        }
+
+
+                    }
+
+                    override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                        TODO("Not yet implemented")
+                    }
+
+
+                })
+
+        }
+    private fun getPlaceNameFromLocation(location: Location): String {
+        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+        try {
+            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+            if (addresses != null) {
+                if (addresses.isNotEmpty()) {
+                    return addresses[0].getAddressLine(0) ?: ""
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return ""
+    }
+    private fun showCheckInDialog(placeName : String) {
+
+        getWeatherInfo(placeName)
+
+// Create a new AlertDialog Builder
+        val builder = AlertDialog.Builder(requireContext())
+
+        // Set the dialog view
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.check_in_dialogue, null)
+        builder.setView(dialogView)
+
+        // Initialize the dialog views
+        val temperatureTextView = dialogView.findViewById<TextView>(R.id.temprature)
+        val conditionTextView = dialogView.findViewById<TextView>(R.id.condition)
+        val checkInTimeTextView = dialogView.findViewById<TextView>(R.id.checkin_time)
+        val checkInEditText = dialogView.findViewById<EditText>(R.id.checkInEditText)
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancelButton)
+        val saveButton = dialogView.findViewById<Button>(R.id.saveButton)
+
+        // Set the temperature and condition values from the API response
+        temperatureTextView.text = "Temperature: ${temp_c}°C"
+        conditionTextView.text = "Condition: $condition"
+
+        // Set the current check-in time
+        val currentTime = Calendar.getInstance().time.toString()
+        checkInTimeTextView.text = "Check-in Time: $currentTime"
+
+        val dialog = builder.create()
+
+        // Set a click listener for the cancel button
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+        // Set a click listener for the save button
+        saveButton.setOnClickListener {
+            val checkInPurpose = checkInEditText.text.toString().trim()
+            if (checkInPurpose.isNotEmpty()) {
+                // Save the check-in purpose
+                Toast.makeText(requireContext(), "Check-in Purpose: $checkInPurpose", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "Please enter a check-in purpose", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Create and show the dialog
+        dialog.show()
+    }
+
+    }
