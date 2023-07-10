@@ -120,10 +120,10 @@
 
 
     <Button
-        android:id="@+id/outlinedButton"
+        android:id="@+id/googleSignIn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Google Sign Up"
+        android:text="Google Sign In"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
         android:textColor="@color/black"
         app:icon="@drawable/google"
@@ -132,6 +132,15 @@
         android:layout_marginTop="5dp"
         android:layout_centerHorizontal="true"
         />
+
+    <ProgressBar
+        android:visibility="gone"
+        android:id="@+id/progressBar"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="5dp"/>
 
 </RelativeLayout>
 

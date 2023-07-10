@@ -1,14 +1,12 @@
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
-import android.text.InputType
 import retrofit2.Call
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
@@ -20,9 +18,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.fragment.app.FragmentTransaction
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -36,7 +34,10 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import retrofit2.Response
+import java.com.techsacheckin.PlaceData
 import java.com.techsacheckin.R
 import java.com.techsacheckin.RetrofitClient
 import java.com.techsacheckin.WeatherResponse
@@ -61,6 +62,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private var temp_f : Double = 0.0
     private  var condition: String = "null"
     val API_KEY = "87af37dd59a246489ac42408222612"
+
+    private lateinit var currentLocationIcon: ImageView
 
 
     private val locationListener: LocationListener = object : LocationListener {
@@ -110,6 +113,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
+        currentLocationIcon = view.findViewById(R.id.currentLocatoinIcon)
+
         val mapFragment = childFragmentManager.findFragmentById(R.id.frg) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
@@ -134,11 +139,18 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 Log.i(TAG, "Place: ${place.name}, ${place.id}")
 
                 // Retrieve the location from the selected place
-                val location = place.latLng
+                val location = place.latLng?.let {
+                    Location("").apply {
+                        latitude = it.latitude
+                        longitude = it.longitude
+                    }
+                }
                 // Update the map camera to the new location
 
+                lastKnownLocation = location
 
                 if (location != null) {
+
                     map?.moveCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             LatLng(
@@ -151,13 +163,14 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     // Add a marker to the selected place
                     map?.addMarker(
                         MarkerOptions()
-                            .position(location)
+                            .position( LatLng(
+                                location.latitude,
+                                location.longitude
+                            ))
                             .title(place.name))
 
 
                 }
-                // Show the check-in dialog with the updated place name
-                place.name?.let { showCheckInDialog(it) }
 
             }
 
@@ -174,10 +187,17 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         getLocationPermission()
         updateLocationUI()
 
+        // Disable the default current location button
+        map?.uiSettings?.isMyLocationButtonEnabled = false
+
         // Set a marker click listener
         map?.setOnMarkerClickListener { marker ->
-            showCheckInDialog(getPlaceNameFromLocation(lastKnownLocation!!))
+            getWeatherInfo(getPlaceNameFromLocation(lastKnownLocation!!))
             true
+        }
+
+        currentLocationIcon.setOnClickListener {
+            getDeviceLocation()
         }
     }
 
@@ -265,7 +285,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                         map?.moveCamera(
                             CameraUpdateFactory.newLatLngZoom(defaultLocation, DEFAULT_ZOOM.toFloat())
                         )
-                        map?.uiSettings?.isMyLocationButtonEnabled = false
                     }
                 }
             } else {
@@ -283,10 +302,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 Log.d(TAG, "Updating UI")
                 getDeviceLocation()
                 map?.isMyLocationEnabled = true
-                map?.uiSettings?.isMyLocationButtonEnabled = true
             } else {
                 map?.isMyLocationEnabled = false
-                map?.uiSettings?.isMyLocationButtonEnabled = false
                 lastKnownLocation = null
                 getLocationPermission()
             }
@@ -328,7 +345,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                             temp_f = response.body()!!.current.temp_f
                             condition = response.body()!!.current.condition.text
 
-                            Toast.makeText(requireContext(), "temp = $temp_f F, $temp_c C : condition = $condition", Toast.LENGTH_SHORT).show()
+                            showCheckInDialog()
                         }
 
 
@@ -356,9 +373,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
         return ""
     }
-    private fun showCheckInDialog(placeName : String) {
-
-        getWeatherInfo(placeName)
+    private fun showCheckInDialog() {
 
 // Create a new AlertDialog Builder
         val builder = AlertDialog.Builder(requireContext())
@@ -393,8 +408,33 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         saveButton.setOnClickListener {
             val checkInPurpose = checkInEditText.text.toString().trim()
             if (checkInPurpose.isNotEmpty()) {
-                // Save the check-in purpose
-                Toast.makeText(requireContext(), "Check-in Purpose: $checkInPurpose", Toast.LENGTH_SHORT).show()
+
+                val user = FirebaseAuth.getInstance().currentUser
+                val uid = user?.uid
+
+                if(uid != null){
+                    val userRef = FirebaseFirestore.getInstance().collection("users").document(uid)
+                    val placeData = PlaceData(
+                        name = getPlaceNameFromLocation(lastKnownLocation!!),
+                        temp_c = temp_c,
+                        condition = condition,
+                        checkInTime = currentTime,
+                        checkInPurpose = checkInPurpose
+                    )
+                    userRef.collection("places").add(placeData).
+                            addOnSuccessListener {
+                                Toast.makeText(requireContext(), "Check-in data saved successfully", Toast.LENGTH_SHORT).show()
+                                dialog.dismiss()
+                            }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(requireContext(), "Failed to save check-in data", Toast.LENGTH_SHORT).show()
+                            Log.e(TAG, "Error saving check-in data", e)
+                        }
+                }
+                else{
+                    Toast.makeText(requireContext(), "User not found", Toast.LENGTH_SHORT).show()
+                }
+
                 dialog.dismiss()
             } else {
                 Toast.makeText(requireContext(), "Please enter a check-in purpose", Toast.LENGTH_SHORT).show()

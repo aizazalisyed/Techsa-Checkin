@@ -106,5 +106,12 @@
         android:layout_centerHorizontal="true"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
         />
-
+    <ProgressBar
+        android:visibility="gone"
+        android:id="@+id/progressBar"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="5dp"/>
 </RelativeLayout>

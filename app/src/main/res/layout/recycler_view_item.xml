@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="10dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginEnd="10dp"
+    android:layout_marginStart="10dp"
+    app:cardElevation="10dp"
+    >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        >
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:text="Place Name..."
+            android:drawableStart="@drawable/ic_baseline_not_listed_location_24"
+            android:drawablePadding="10dp"
+            android:drawableTint="@color/purple_soothing"
+            android:textColor="@color/black"/>
+
+        <TextView
+            android:layout_marginTop="5dp"
+            android:textSize="18sp"
+            android:drawablePadding="10dp"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/temprature"
+            android:text="temp.."
+            android:layout_below="@id/placeName"
+            android:drawableStart="@drawable/ic_baseline_wb_sunny_24"
+            android:drawableTint="@color/quantum_yellow"
+            />
+
+        <TextView
+            android:layout_marginTop="5dp"
+            android:textSize="18sp"
+            android:drawablePadding="10dp"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/condition"
+            android:text="condition.."
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/temprature"
+            android:drawableStart="@drawable/ic_baseline_tsunami_24"
+            android:drawableTint="@color/green"
+            android:layout_alignLeft="@id/temprature"
+            />
+
+        <TextView
+            android:layout_marginTop="5dp"
+            android:textSize="18sp"
+            android:drawablePadding="10dp"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/checkin_time"
+            android:text="check in time.."
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/condition"
+            android:drawableStart="@drawable/ic_baseline_timer_24"
+            android:drawableTint="@color/gray"
+            android:layout_alignLeft="@id/temprature"
+            />
+        <TextView
+            android:id="@+id/checkInEditText"
+            android:padding="5dp"
+            android:text="check in purpose..."
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:background="@drawable/input_background"
+            android:layout_below="@id/checkin_time"
+            android:layout_marginTop="20dp"
+            android:gravity="top"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            />
+
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

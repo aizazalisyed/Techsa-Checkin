@@ -21,6 +21,7 @@
     </FrameLayout>
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:backgroundTint="@color/white"
@@ -36,5 +37,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </androidx.cardview.widget.CardView>
+
+    <ImageView
+        android:id="@+id/currentLocatoinIcon"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="20dp"
+        android:src="@drawable/ic_baseline_gps_fixed_24"
+        app:tint="@color/purple_soothing"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@id/cardView"
+        android:layout_marginTop="20dp"
+        />
+
 
 </RelativeLayout>
