@@ -41,20 +41,19 @@
             />
 
         <TextView
-            android:layout_marginTop="5dp"
-            android:textSize="18sp"
-            android:drawablePadding="10dp"
-            android:textColor="@color/black"
+            android:id="@+id/condition"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/condition"
-            android:text="condition.."
-            android:layout_centerHorizontal="true"
             android:layout_below="@id/temprature"
-            android:drawableStart="@drawable/ic_baseline_tsunami_24"
-            android:drawableTint="@color/green"
             android:layout_alignLeft="@id/temprature"
-            />
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="5dp"
+            android:drawableStart="@drawable/ic_baseline_tsunami_24"
+            android:drawablePadding="10dp"
+            android:drawableTint="@color/green"
+            android:text="condition.."
+            android:textColor="@color/black"
+            android:textSize="18sp" />
 
         <TextView
             android:layout_marginTop="5dp"
@@ -72,7 +71,7 @@
             android:layout_alignLeft="@id/temprature"
             />
         <TextView
-            android:id="@+id/checkInEditText"
+            android:id="@+id/checkInText"
             android:padding="5dp"
             android:text="check in purpose..."
             android:textSize="18sp"

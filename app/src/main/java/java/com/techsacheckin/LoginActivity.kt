@@ -1,6 +1,7 @@
 package java.com.techsacheckin
 
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -9,11 +10,15 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginActivity : AppCompatActivity() {
 
@@ -34,6 +39,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var googleSignIn : Button
     private val RC_SIGN_IN = 123
 
+    private lateinit var sharedPreferences: SharedPreferences
+    private val PREF_FIRST_TIME_OPEN = "firstTimeOpen"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +50,7 @@ class LoginActivity : AppCompatActivity() {
         //initialization of Firebase Auth
         auth = FirebaseAuth.getInstance()
 
+        sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE)
 
         //initialization of widgets
         signUpButton = findViewById(R.id.signUpButton)
@@ -55,7 +64,6 @@ class LoginActivity : AppCompatActivity() {
         singUpButtonClick()
         loginButtOnclick()
         googleSignInButtonClick()
-
         // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if (currentUser != null) {
@@ -63,6 +71,36 @@ class LoginActivity : AppCompatActivity() {
             startActivity(i)
             finish()
         }
+
+        val isFirstTimeOpen = sharedPreferences.getBoolean(PREF_FIRST_TIME_OPEN, true)
+        Toast.makeText(this, "${isFirstTimeOpen}", Toast.LENGTH_SHORT).show()
+        if (isFirstTimeOpen){
+
+            val biometricPrompt = createBiometricPrompt()
+            val promptInfo = createPromptInfo()
+true
+            val canAuthenticate = BiometricManager.from(this).canAuthenticate()
+            if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
+                biometricPrompt.authenticate(promptInfo)
+            } else {
+                Toast.makeText(this, "Fingerprint authentication is not available", Toast.LENGTH_SHORT).show()
+            }
+
+            // Update the flag to indicate that the app has been opened before
+            sharedPreferences.edit().putBoolean(PREF_FIRST_TIME_OPEN, false).apply()
+        }
+
+        // Trigger fingerprint authentication automatically
+        val biometricPrompt = createBiometricPrompt()
+        val promptInfo = createPromptInfo()
+
+        val canAuthenticate = BiometricManager.from(this).canAuthenticate()
+        if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
+            biometricPrompt.authenticate(promptInfo)
+        } else {
+            Toast.makeText(this, "Fingerprint authentication is not available", Toast.LENGTH_SHORT).show()
+        }
+
     }
 
     private fun singUpButtonClick(){
@@ -82,6 +120,10 @@ class LoginActivity : AppCompatActivity() {
             else{
 
                 progressBar.visibility = ProgressBar.VISIBLE
+                sharedPreferences.edit()
+                    .putString("email", emailEditText.text.toString())
+                    .putString("password", passwordEditText.text.toString())
+                    .apply()
                 signIn(email = emailEditText.text.toString(),
                     password = passwordEditText.text.toString()
                 )
@@ -162,9 +204,33 @@ class LoginActivity : AppCompatActivity() {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithCredential:success")
                     val user = auth.currentUser
-                    val i = Intent(this@LoginActivity, UserProfileActivity::class.java)
-                    finish()
-                    startActivity(i)
+                    val userId = user?.uid
+                    val firestore = FirebaseFirestore.getInstance()
+                    val userRef = firestore.collection("users").document(userId!!)
+                    userRef.get()
+                        .addOnCompleteListener { snapshot ->
+                            if (snapshot.isSuccessful && snapshot.result != null && snapshot.result!!.exists()) {
+                                // User ID already exists, skip UserProfileActivity and launch MainActivity
+                                val i = Intent(this@LoginActivity, MainActivity::class.java)
+                                finish()
+                                startActivity(i)
+                            } else {
+                                // User ID doesn't exist, proceed to UserProfileActivity
+                                val i = Intent(this@LoginActivity, UserProfileActivity::class.java)
+                                finish()
+                                startActivity(i)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            // Handle the failure case if there's an error while checking the user ID
+                            Log.e(TAG, "Error checking user ID in Firestore", e)
+                            Toast.makeText(
+                                baseContext,
+                                "Error checking user ID in Firestore",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
                 } else {
                     // If sign in fails, display a message to the user.
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
@@ -175,6 +241,49 @@ class LoginActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+    }
+
+
+    private fun createBiometricPrompt(): BiometricPrompt {
+        val executor = ContextCompat.getMainExecutor(this)
+
+        val callback = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                val user = auth.currentUser
+                if (user != null) {
+                    val i = Intent(this@LoginActivity, UserProfileActivity::class.java)
+                    finish()
+                    startActivity(i)
+                }
+                else{
+                    val savedEmail = sharedPreferences.getString("email", null)
+                    val savedPassword = sharedPreferences.getString("password", null)
+                    if (!savedEmail.isNullOrBlank() && !savedPassword.isNullOrBlank()) {
+                        progressBar.visibility = ProgressBar.VISIBLE
+                        signIn(savedEmail, savedPassword)}
+
+                }
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Toast.makeText(this@LoginActivity, "Authentication failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        return BiometricPrompt(this, executor, callback)
+    }
+    private fun createPromptInfo(): BiometricPrompt.PromptInfo {
+        return BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Fingerprint Authentication")
+            .setSubtitle("Use your fingerprint to sign in")
+            .setNegativeButtonText("Cancel")
+            .build()
     }
 
 }
