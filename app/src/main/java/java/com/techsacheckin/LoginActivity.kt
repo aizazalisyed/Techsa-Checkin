@@ -65,20 +65,20 @@ class LoginActivity : AppCompatActivity() {
         loginButtOnclick()
         googleSignInButtonClick()
         // Check if user is signed in (non-null) and update UI accordingly.
+
+        var userSignedIn = false
+
         val currentUser = auth.currentUser
         if (currentUser != null) {
+            userSignedIn = true
             val i = Intent(this, MainActivity::class.java)
             startActivity(i)
             finish()
         }
 
-        val isFirstTimeOpen = sharedPreferences.getBoolean(PREF_FIRST_TIME_OPEN, true)
-        Toast.makeText(this, "${isFirstTimeOpen}", Toast.LENGTH_SHORT).show()
-        if (isFirstTimeOpen){
-
+        if (!userSignedIn){
             val biometricPrompt = createBiometricPrompt()
             val promptInfo = createPromptInfo()
-true
             val canAuthenticate = BiometricManager.from(this).canAuthenticate()
             if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
                 biometricPrompt.authenticate(promptInfo)
@@ -88,17 +88,6 @@ true
 
             // Update the flag to indicate that the app has been opened before
             sharedPreferences.edit().putBoolean(PREF_FIRST_TIME_OPEN, false).apply()
-        }
-
-        // Trigger fingerprint authentication automatically
-        val biometricPrompt = createBiometricPrompt()
-        val promptInfo = createPromptInfo()
-
-        val canAuthenticate = BiometricManager.from(this).canAuthenticate()
-        if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
-            biometricPrompt.authenticate(promptInfo)
-        } else {
-            Toast.makeText(this, "Fingerprint authentication is not available", Toast.LENGTH_SHORT).show()
         }
 
     }

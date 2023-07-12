@@ -1,6 +1,7 @@
 package java.com.techsacheckin
 
 import MapFragment
+import android.Manifest
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -11,6 +12,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
+
+private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1122
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        requestLocationPermission()
 
         //widget init
         bottomNavigationView = findViewById(R.id.bottom_navigation)
@@ -72,6 +77,34 @@ class MainActivity : AppCompatActivity() {
             .hide(checkInFragment)
             .commit()
         fm.beginTransaction().add(R.id.main_container,mapFragment,"mapFragment").commit()
+    }
+
+    private fun requestLocationPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+            PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, handle it in the MapFragment
+                val fragment = supportFragmentManager.findFragmentById(R.id.main_container)
+                if (fragment is MapFragment) {
+                    fragment.handleLocationPermissionGranted()
+                }
+            } else {
+                // Permission denied
+                // Handle permission denial case
+            }
+        }
     }
 
     }

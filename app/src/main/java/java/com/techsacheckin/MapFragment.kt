@@ -105,15 +105,21 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
+        Log.d(TAG, "onCreateView()")
         return inflater.inflate(R.layout.fragment_map, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Log.d(TAG, " onViewCreated")
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
         currentLocationIcon = view.findViewById(R.id.currentLocatoinIcon)
+
+
+
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.frg) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -179,12 +185,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 Log.i(TAG, "An error occurred: $status")
             }
         })
-
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        getLocationPermission()
         updateLocationUI()
 
         // Disable the default current location button
@@ -201,70 +205,23 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun getLocationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Location permission is granted
-            Log.d(TAG, "locationPermissionGranted : inside getLocationPermission()")
-            locationPermissionGranted = true
-            getDeviceLocation()
-        } else {
-            // Location permission is not granted, request it
-            Log.d(TAG, "locationPermissionGranted = false: inside getLocationPermission()")
-            requestLocationPermission()
-        }
-    }
 
-    private fun requestLocationPermission() {
-        // Request the ACCESS_FINE_LOCATION permission
-        ActivityCompat.requestPermissions(
-            requireActivity(),
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
-        )
-        Log.d(TAG, "inside requestLocationPermission()")
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-
-        Toast.makeText(requireContext(), "onRequestPermissionsResult is called", Toast.LENGTH_SHORT).show()
-
-        // Handle the result of the permission request
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Permission Granted : inside onRequestPermissionsResult")
-
-                locationPermissionGranted = true
-                getDeviceLocation()
-                startLocationUpdates()
-            } else {
-                Log.d(TAG, "Permission Denied : inside onRequestPermissionsResult")
-                locationPermissionGranted = false
-                // Handle permission denial case
-            }
-        }
+    fun handleLocationPermissionGranted() {
+        locationPermissionGranted = true
+        getDeviceLocation()
+        startLocationUpdates()
+        updateLocationUI()
     }
 
     @SuppressLint("MissingPermission")
     private fun getDeviceLocation() {
         try {
             if (locationPermissionGranted) {
-                val locationResult = fusedLocationProviderClient.lastLocation
-                locationResult.addOnCompleteListener(requireActivity()) { task ->
+                fusedLocationProviderClient.lastLocation.addOnCompleteListener(requireActivity()) { task ->
                     if (task.isSuccessful) {
                         lastKnownLocation = task.result
                         if (lastKnownLocation != null) {
-
                             val placeName = getPlaceNameFromLocation(lastKnownLocation!!)
-
                             map?.moveCamera(
                                 CameraUpdateFactory.newLatLngZoom(
                                     LatLng(
@@ -275,9 +232,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                             )
                             map?.addMarker(
                                 MarkerOptions()
-                                    .position(LatLng(lastKnownLocation!!.latitude,lastKnownLocation!!.longitude))
-                                    .title(getPlaceNameFromLocation(lastKnownLocation!!)))
-
+                                    .position(LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude))
+                                    .title(getPlaceNameFromLocation(lastKnownLocation!!))
+                            )
                         }
                     } else {
                         Log.d(TAG, "Current location is null. Using defaults.")
@@ -288,18 +245,18 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     }
                 }
             } else {
-                Log.d(TAG, " locationPermissionGranted = false : inside getDeviceLocation()")
+                Log.d(TAG, "locationPermissionGranted = false : inside getDeviceLocation()")
             }
         } catch (e: SecurityException) {
             Log.e(TAG, "Exception: ${e.message}", e)
         }
     }
 
+
     @SuppressLint("MissingPermission")
     private fun updateLocationUI() {
         try {
             if (locationPermissionGranted) {
-                Log.d(TAG, "Updating UI")
                 getDeviceLocation()
                 map?.isMyLocationEnabled = true
             } else {
@@ -329,6 +286,26 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     companion object {
         private const val TAG = "MapFragment"
+    }
+
+    private fun getLocationPermission() {
+        val activity = requireActivity()
+        if (ContextCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Location permission is granted
+            locationPermissionGranted = true
+            handleLocationPermissionGranted()
+        } else {
+            // Location permission is not granted, request it
+            ActivityCompat.requestPermissions(
+                activity,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
+            )
+        }
     }
 
     fun getWeatherInfo(placeName : String){
